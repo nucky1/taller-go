@@ -1,4 +1,4 @@
-package parte2
+package smarthouse
 
 import (
 	"errors"
@@ -7,33 +7,29 @@ import (
 	"github.com/fatih/color"
 )
 
-type Controlable interface {
-	Encender()
-	Apagar()
-	EstadoActual()
-}
 type Dispositivo struct {
-	Nombre string
-	Estado bool
+	nombre string
+	estado bool
 }
 
 func (d *Dispositivo) Encender() error {
-	if d.Estado {
+	if d.estado {
 		return errors.New("El dispositivo ya está prendido")
 	}
-	d.Estado = true
-	return nil
-}
-func (d *Dispositivo) Apagar() error {
-	if !d.Estado {
-		return errors.New("El dispositivo ya está apagado")
-	}
-	d.Estado = false
+	d.estado = true
 	return nil
 }
 
-func (d Dispositivo) EstadoActual() string {
-	if d.Estado {
+func (d *Dispositivo) Apagar() error {
+	if !d.estado {
+		return errors.New("El dispositivo ya está apagado")
+	}
+	d.estado = false
+	return nil
+}
+
+func (d *Dispositivo) EstadoActual() string {
+	if d.estado {
 		color.Green("Encendido")
 		return "Encendido"
 	}
@@ -41,9 +37,12 @@ func (d Dispositivo) EstadoActual() string {
 	return "Apagado"
 }
 
+func (d *Dispositivo) PrintObject() string {
+	return d.nombre
+}
 func NuevoDispositivo(nombre string, estado bool) (Dispositivo, error) {
 	if len(nombre) > 10 {
 		return Dispositivo{}, fmt.Errorf("el nombre no puede tener más de 10 caracteres")
 	}
-	return Dispositivo{Nombre: nombre, Estado: estado}, nil
+	return Dispositivo{nombre: nombre, estado: estado}, nil
 }
