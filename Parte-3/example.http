@@ -1,0 +1,14 @@
+
+POST http://localhost:8080/users HTTP/1.1
+content-type: application/json
+
+{
+    "name": " ",
+    "address": "asdasd",
+    "nickname": "jperez"
+}
+
+
+GET http://localhost:8080/users/0 HTTP/1.1
+content-type: application/json
+ 
