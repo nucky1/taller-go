@@ -26,7 +26,7 @@ func NewService(storage *LocalStorage) *Service {
 func (s *Service) Create(sale *Sale) error {
 	sale.ID = uuid.NewString()
 	estado := []string{"pending", "approved", "rejected"}
-	sale.estado = estado[rand.Intn(3)]
+	sale.Estado = estado[rand.Intn(3)]
 	now := time.Now()
 	sale.CreatedAt = now
 	sale.UpdatedAt = now
@@ -51,15 +51,15 @@ func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
 		return nil, err
 	}
 	// reviso que el estado anterior es valido
-	if existing.estado != "pending" {
+	if existing.Estado != "pending" {
 		return nil, nil //Solo permite cambiar si el estado anterior es == pending
 	}
 	// me fijo que el estado nuevo es de los dos validos
-	if !(sale.estado == "approved" || sale.estado == "rejected") {
+	if !(sale.Estado == "approved" || sale.Estado == "rejected") {
 		return nil, nil //implementar error aca no es estado valido para le cambio
 	}
 
-	existing.estado = sale.estado
+	existing.Estado = sale.Estado
 	existing.UpdatedAt = time.Now()
 	existing.Version++
 

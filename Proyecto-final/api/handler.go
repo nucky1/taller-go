@@ -18,14 +18,15 @@ type handler struct {
 func (h *handler) handleCreate(ctx *gin.Context) {
 	// request payload
 	var req struct {
-		user_id string  `json:"user_id" binding:"required"`
-		amount  float32 `json:"amount" binding:"required,gt=0"`
+		UserID string  `json:"user_id" binding:"required"`
+		Amount float32 `json:"amount" binding:"required,gt=0"`
 	}
+
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	resp, err := http.Get("localhost:8080/user/" + req.user_id)
+	resp, err := http.Get("localhost:8080/user/" + req.UserID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -35,8 +36,8 @@ func (h *handler) handleCreate(ctx *gin.Context) {
 		return
 	}
 	u := &sale.Sale{
-		user_id: req.user_id,
-		amount:  req.amount,
+		UserID: req.UserID,
+		Amount: req.Amount,
 	}
 	if err := h.saleService.Create(u); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
