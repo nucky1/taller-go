@@ -6,6 +6,7 @@ import (
 	"sales-api/internal/sale"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-resty/resty/v2"
 )
 
 // "github.com/go-playground/validator/v10"
@@ -13,6 +14,8 @@ import (
 type handler struct {
 	saleService *sale.Service
 }
+
+var client = resty.New()
 
 // handleCreate handles POST /sales
 func (h *handler) handleCreate(ctx *gin.Context) {
@@ -26,13 +29,14 @@ func (h *handler) handleCreate(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	resp, err := http.Get("localhost:8080/user/" + req.UserID)
+	// Validar que el usuario exista
+	resp, err := client.R().Get("http://localhost:8080/users/" + req.UserID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error al contactar servicio de usuarios"})
 		return
 	}
-	if resp.StatusCode != 200 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Error en la consulta de usuarios."})
+	if resp.StatusCode() != http.StatusOK {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "el usuario no existe"})
 		return
 	}
 	u := &sale.Sale{
