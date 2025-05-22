@@ -48,15 +48,15 @@ func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
 	existing, err := s.storage.Read(id)
 	// controlo existencia
 	if err != nil {
-		return nil, err
+		return nil, ErrSaleNotFound
 	}
 	// reviso que el estado anterior es valido
 	if existing.Estado != "pending" {
-		return nil, nil //Solo permite cambiar si el estado anterior es == pending
+		return existing, ErrInvalidStateChange //Solo permite cambiar si el estado anterior es == pending
 	}
 	// me fijo que el estado nuevo es de los dos validos
 	if !(sale.Estado == "approved" || sale.Estado == "rejected") {
-		return nil, nil //implementar error aca no es estado valido para le cambio
+		return nil, ErrInvalidNewState
 	}
 
 	existing.Estado = sale.Estado

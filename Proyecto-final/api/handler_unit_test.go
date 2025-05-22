@@ -95,6 +95,33 @@ func TestUpdateSale(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	logger, _ := zap.NewDevelopment()
 
+	t.Run("actualiza correctamente", func(t *testing.T) {
+		router := gin.New()
+		h := newHandler(&fakeClientOK{}, logger)
+		router.POST("/sales", h.handleCreate)
+		router.PATCH("/sales/:id", h.handleUpdate)
+
+		createBody := `{"user_id": "abc123", "amount": 150}`
+		reqCreate := httptest.NewRequest(http.MethodPost, "/sales", strings.NewReader(createBody))
+		reqCreate.Header.Set("Content-Type", "application/json")
+		recCreate := httptest.NewRecorder()
+		router.ServeHTTP(recCreate, reqCreate)
+		require.Equal(t, http.StatusCreated, recCreate.Code)
+
+		bodyStr := recCreate.Body.String()
+		idStart := strings.Index(bodyStr, `"id":"`) + len(`"id":"`)
+		idEnd := strings.Index(bodyStr[idStart:], `"`) + idStart
+		saleID := bodyStr[idStart:idEnd]
+
+		updateBody := `{"estado": "approved"}`
+		reqUpdate := httptest.NewRequest(http.MethodPatch, "/sales/"+saleID, bytes.NewBufferString(updateBody))
+		reqUpdate.Header.Set("Content-Type", "application/json")
+		recUpdate := httptest.NewRecorder()
+		router.ServeHTTP(recUpdate, reqUpdate)
+
+		require.Equal(t, http.StatusOK, recUpdate.Code)
+		assert.Contains(t, recUpdate.Body.String(), `"estado":"approved"`)
+	})
 	t.Run("actualiza correctamente de pending a approved", func(t *testing.T) {
 		router := gin.New()
 		h := newHandler(&fakeClientOK{}, logger)
@@ -148,7 +175,7 @@ func TestUpdateSale(t *testing.T) {
 		router.ServeHTTP(recUpdate, reqUpdate)
 
 		require.Equal(t, http.StatusBadRequest, recUpdate.Code)
-		assert.Contains(t, recUpdate.Body.String(), "estado no válido")
+		assert.Contains(t, recUpdate.Body.String(), "estado no válido para cambio")
 	})
 
 	t.Run("error por id inexistente", func(t *testing.T) {

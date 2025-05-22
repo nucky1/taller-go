@@ -100,8 +100,16 @@ func (h *handler) handleUpdate(ctx *gin.Context) {
 	u, err := h.saleService.Update(id, fields)
 	if err != nil {
 		h.logger.Warn("update failed", zap.String("id", id), zap.Error(err))
-		if errors.Is(err, sale.ErrNotFound) {
+		if errors.Is(err, sale.ErrSaleNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, sale.ErrInvalidStateChange) {
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, sale.ErrInvalidNewState) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
