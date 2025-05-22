@@ -7,6 +7,7 @@ import (
 	"sales-api/internal/sale"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
@@ -46,6 +47,20 @@ func newHandler(client HTTPClient, logger *zap.Logger) handler {
 		httpClient:  client,
 		logger:      logger,
 	}
+}
+
+// createTestSale crea una venta con estado inicial forzado (por ej: "pending")
+func createTestSale(svc *sale.Service, userID string, amount float32, estado string) *sale.Sale {
+	s := &sale.Sale{
+		UserID:    userID,
+		Amount:    amount,
+		Estado:    estado,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Version:   1,
+	}
+	_ = svc.Create(s)
+	return s
 }
 
 // ======================= CREATE =======================//
@@ -95,53 +110,22 @@ func TestUpdateSale(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	logger, _ := zap.NewDevelopment()
 
-	t.Run("actualiza correctamente", func(t *testing.T) {
-		router := gin.New()
-		h := newHandler(&fakeClientOK{}, logger)
-		router.POST("/sales", h.handleCreate)
-		router.PATCH("/sales/:id", h.handleUpdate)
-
-		createBody := `{"user_id": "abc123", "amount": 150}`
-		reqCreate := httptest.NewRequest(http.MethodPost, "/sales", strings.NewReader(createBody))
-		reqCreate.Header.Set("Content-Type", "application/json")
-		recCreate := httptest.NewRecorder()
-		router.ServeHTTP(recCreate, reqCreate)
-		require.Equal(t, http.StatusCreated, recCreate.Code)
-
-		bodyStr := recCreate.Body.String()
-		idStart := strings.Index(bodyStr, `"id":"`) + len(`"id":"`)
-		idEnd := strings.Index(bodyStr[idStart:], `"`) + idStart
-		saleID := bodyStr[idStart:idEnd]
-
-		updateBody := `{"estado": "approved"}`
-		reqUpdate := httptest.NewRequest(http.MethodPatch, "/sales/"+saleID, bytes.NewBufferString(updateBody))
-		reqUpdate.Header.Set("Content-Type", "application/json")
-		recUpdate := httptest.NewRecorder()
-		router.ServeHTTP(recUpdate, reqUpdate)
-
-		require.Equal(t, http.StatusOK, recUpdate.Code)
-		assert.Contains(t, recUpdate.Body.String(), `"estado":"approved"`)
-	})
 	t.Run("actualiza correctamente de pending a approved", func(t *testing.T) {
 		router := gin.New()
-		h := newHandler(&fakeClientOK{}, logger)
-		router.POST("/sales", h.handleCreate)
+		storage := sale.NewLocalStorage()
+		service := sale.NewService(storage)
+
+		s := createTestSale(service, "abc123", 150, "pending")
+
+		h := handler{
+			saleService: service,
+			httpClient:  &fakeClientOK{},
+			logger:      logger,
+		}
 		router.PATCH("/sales/:id", h.handleUpdate)
 
-		createBody := `{"user_id": "abc123", "amount": 150}`
-		reqCreate := httptest.NewRequest(http.MethodPost, "/sales", strings.NewReader(createBody))
-		reqCreate.Header.Set("Content-Type", "application/json")
-		recCreate := httptest.NewRecorder()
-		router.ServeHTTP(recCreate, reqCreate)
-		require.Equal(t, http.StatusCreated, recCreate.Code)
-
-		bodyStr := recCreate.Body.String()
-		idStart := strings.Index(bodyStr, `"id":"`) + len(`"id":"`)
-		idEnd := strings.Index(bodyStr[idStart:], `"`) + idStart
-		saleID := bodyStr[idStart:idEnd]
-
 		updateBody := `{"estado": "approved"}`
-		reqUpdate := httptest.NewRequest(http.MethodPatch, "/sales/"+saleID, bytes.NewBufferString(updateBody))
+		reqUpdate := httptest.NewRequest(http.MethodPatch, "/sales/"+s.ID, bytes.NewBufferString(updateBody))
 		reqUpdate.Header.Set("Content-Type", "application/json")
 		recUpdate := httptest.NewRecorder()
 		router.ServeHTTP(recUpdate, reqUpdate)
@@ -152,24 +136,20 @@ func TestUpdateSale(t *testing.T) {
 
 	t.Run("error por estado inválido", func(t *testing.T) {
 		router := gin.New()
-		h := newHandler(&fakeClientOK{}, logger)
-		router.POST("/sales", h.handleCreate)
+		storage := sale.NewLocalStorage()
+		service := sale.NewService(storage)
+
+		s := createTestSale(service, "abc123", 150, "pending")
+
+		h := handler{
+			saleService: service,
+			httpClient:  &fakeClientOK{},
+			logger:      logger,
+		}
 		router.PATCH("/sales/:id", h.handleUpdate)
 
-		createBody := `{"user_id": "abc123", "amount": 150}`
-		reqCreate := httptest.NewRequest(http.MethodPost, "/sales", strings.NewReader(createBody))
-		reqCreate.Header.Set("Content-Type", "application/json")
-		recCreate := httptest.NewRecorder()
-		router.ServeHTTP(recCreate, reqCreate)
-		require.Equal(t, http.StatusCreated, recCreate.Code)
-
-		bodyStr := recCreate.Body.String()
-		idStart := strings.Index(bodyStr, `"id":"`) + len(`"id":"`)
-		idEnd := strings.Index(bodyStr[idStart:], `"`) + idStart
-		saleID := bodyStr[idStart:idEnd]
-
 		updateBody := `{"estado": "cancelled"}`
-		reqUpdate := httptest.NewRequest(http.MethodPatch, "/sales/"+saleID, bytes.NewBufferString(updateBody))
+		reqUpdate := httptest.NewRequest(http.MethodPatch, "/sales/"+s.ID, bytes.NewBufferString(updateBody))
 		reqUpdate.Header.Set("Content-Type", "application/json")
 		recUpdate := httptest.NewRecorder()
 		router.ServeHTTP(recUpdate, reqUpdate)

@@ -98,6 +98,7 @@ func (h *handler) handleUpdate(ctx *gin.Context) {
 	}
 
 	u, err := h.saleService.Update(id, fields)
+
 	if err != nil {
 		h.logger.Warn("update failed", zap.String("id", id), zap.Error(err))
 		if errors.Is(err, sale.ErrSaleNotFound) {

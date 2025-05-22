@@ -25,8 +25,11 @@ func NewService(storage *LocalStorage) *Service {
 // Returns ErrEmptyID if sale.ID is empty.
 func (s *Service) Create(sale *Sale) error {
 	sale.ID = uuid.NewString()
-	estado := []string{"pending", "approved", "rejected"}
-	sale.Estado = estado[rand.Intn(3)]
+	// esto es asi porque sino los test de update fallan al crear aleatorio
+	if sale.Estado == "" {
+		estado := []string{"pending", "approved", "rejected"}
+		sale.Estado = estado[rand.Intn(3)]
+	}
 	now := time.Now()
 	sale.CreatedAt = now
 	sale.UpdatedAt = now
@@ -52,7 +55,7 @@ func (s *Service) Update(id string, sale *UpdateFields) (*Sale, error) {
 	}
 	// reviso que el estado anterior es valido
 	if existing.Estado != "pending" {
-		return existing, ErrInvalidStateChange //Solo permite cambiar si el estado anterior es == pending
+		return nil, ErrInvalidStateChange //Solo permite cambiar si el estado anterior es == pending
 	}
 	// me fijo que el estado nuevo es de los dos validos
 	if !(sale.Estado == "approved" || sale.Estado == "rejected") {
