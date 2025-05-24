@@ -137,3 +137,18 @@ func (h *handler) handleDelete(ctx *gin.Context) {
 
 	ctx.Status(http.StatusNoContent)
 }
+
+// Crear endpoint GET /sales con filtros por user_id y status.
+func (h *handler) handleList(c *gin.Context) {
+	userID := c.Param("userid")
+	status := c.Param("status")
+
+	// Llama al servicio para obtener las ventas filtradas
+	sales, err := h.saleService.ListByUserAndStatus(userID, status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"sales": sales})
+}

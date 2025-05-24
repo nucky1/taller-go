@@ -53,3 +53,13 @@ func (l *LocalStorage) Delete(id string) error {
 	delete(l.m, id)
 	return nil
 }
+
+// GetAll returns a slice of all Sale objects in storage.
+func (ls *LocalStorage) GetAll() []Sale {
+
+	sales := make([]Sale, 0, len(ls.m))
+	for _, sale := range ls.m {
+		sales = append(sales, *sale)
+	}
+	return sales
+}
