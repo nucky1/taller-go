@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"sales-api/internal/sale"
@@ -175,3 +176,66 @@ func TestUpdateSale(t *testing.T) {
 }
 
 //======================= UPDATE =======================//
+
+//======================= flujo completo POST → PATCH → GET (happy path) =======================//
+
+func TestIntegration_FlujoCompleto(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logger, _ := zap.NewDevelopment()
+
+	router := gin.New()
+	storage := sale.NewLocalStorage()
+	service := sale.NewService(storage)
+
+	h := handler{
+		saleService: service,
+		httpClient:  &fakeClientOK{},
+		logger:      logger,
+	}
+
+	router.POST("/sales", h.handleCreate)
+	router.PATCH("/sales/:id", h.handleUpdate)
+	router.GET("/sales", h.handleList)
+
+	// 1. POST /sales
+	body := `{"user_id": "abc123", "amount": 150}`
+	req := httptest.NewRequest(http.MethodPost, "/sales", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusCreated, rec.Code)
+	var created sale.Sale
+	err := json.Unmarshal(rec.Body.Bytes(), &created)
+	require.NoError(t, err)
+	require.Equal(t, "abc123", created.UserID)
+	require.Equal(t, float32(150), created.Amount)
+	require.Equal(t, "pending", created.Estado)
+
+	// 2. PATCH /sales/:id
+	updateBody := `{"estado": "approved"}`
+	reqPatch := httptest.NewRequest(http.MethodPatch, "/sales/"+created.ID, strings.NewReader(updateBody))
+	reqPatch.Header.Set("Content-Type", "application/json")
+	recPatch := httptest.NewRecorder()
+	router.ServeHTTP(recPatch, reqPatch)
+
+	require.Equal(t, http.StatusOK, recPatch.Code)
+	var updated sale.Sale
+	err = json.Unmarshal(recPatch.Body.Bytes(), &updated)
+	require.NoError(t, err)
+	require.Equal(t, "approved", updated.Estado)
+
+	// 3. GET /sales?user_id=abc123&status=approved
+	reqGet := httptest.NewRequest(http.MethodGet, "/sales?user_id=abc123&status=approved", nil)
+	recGet := httptest.NewRecorder()
+	router.ServeHTTP(recGet, reqGet)
+
+	require.Equal(t, http.StatusOK, recGet.Code)
+	bodyResp := recGet.Body.String()
+	assert.Contains(t, bodyResp, `"approved":1`)
+	assert.Contains(t, bodyResp, `"results"`)
+	assert.Contains(t, bodyResp, `"user_id":"abc123"`)
+	assert.Contains(t, bodyResp, `"estado":"approved"`)
+}
+
+//======================= flujo completo POST → PATCH → GET (happy path) =======================//

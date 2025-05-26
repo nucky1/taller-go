@@ -140,15 +140,39 @@ func (h *handler) handleDelete(ctx *gin.Context) {
 
 // Crear endpoint GET /sales con filtros por user_id y status.
 func (h *handler) handleList(c *gin.Context) {
-	userID := c.Param("userid")
-	status := c.Param("status")
+	userID := c.Query("user_id")
+	status := c.Query("status")
+	validStates := map[string]bool{"approved": true, "rejected": true, "pending": true}
+	// no se pide esta validación, pero la coloco ya que no puede venir el id del user vacio!
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id es requerido"})
+		return
+	}
+	if status != "" && !validStates[status] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "estado inválido"})
+		return
+	}
 
-	// Llama al servicio para obtener las ventas filtradas
 	sales, err := h.saleService.ListByUserAndStatus(userID, status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"sales": sales})
+	metadata := map[string]interface{}{
+		"quantity":     len(sales),
+		"approved":     0,
+		"rejected":     0,
+		"pending":      0,
+		"total_amount": 0.0,
+	}
+	for _, s := range sales {
+		metadata[s.Estado] = metadata[s.Estado].(int) + 1
+		metadata["total_amount"] = metadata["total_amount"].(float64) + float64(s.Amount)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"metadata": metadata,
+		"results":  sales,
+	})
 }

@@ -34,5 +34,5 @@ func InitRoutes(e *gin.Engine) {
 		})
 	})
 	// Crear endpoint GET /sales con filtros por user_id y status.
-	e.GET("/sales/:userid/:status", h.handleList)
+	e.GET("/sales", h.handleList)
 }

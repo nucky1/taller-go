@@ -54,6 +54,7 @@ func (l *LocalStorage) Delete(id string) error {
 	return nil
 }
 
+// Crear endpoint GET /sales con filtros por user_id y status.
 // GetAll returns a slice of all Sale objects in storage.
 func (ls *LocalStorage) GetAll() []Sale {
 
