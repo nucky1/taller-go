@@ -82,8 +82,10 @@ func (s *Service) Delete(id string) error {
 // Crear endpoint GET /sales con filtros por user_id y status.
 func (s *Service) ListByUserAndStatus(userID, status string) ([]Sale, error) {
 	var filtered []Sale
+
 	for _, sale := range s.storage.GetAll() {
-		if sale.UserID == userID && sale.Estado == status {
+		print("usuario", sale.UserID)
+		if sale.UserID == userID && (status == "" || sale.Estado == status) {
 			filtered = append(filtered, sale)
 		}
 	}
