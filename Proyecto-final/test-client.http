@@ -1,0 +1,21 @@
+### Registrar nuevo usuario
+POST http://localhost:8081/sales
+Content-Type: application/json
+
+{"user_id": "a1b0c4ef-e6e9-47fe-b60d-c9d32800a4dd", "amount": 300}
+
+###
+
+### editar usuario
+PATcH http://localhost:8081/sales/f5f9ca7f-3749-4e10-b306-dca43844ef64
+Content-Type: application/json
+
+{
+  "estado": "approved"
+}
+###
+
+### consultar usuario
+GET http://localhost:8081/sales?user_id=a1b0c4ef-e6e9-47fe-b60d-c9d32800a4dd
+Content-Type: application/json
+ 
