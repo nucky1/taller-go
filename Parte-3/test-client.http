@@ -1,0 +1,30 @@
+### Registrar nuevo usuario
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "name": "nico nico",
+  "address": "siempre verde 123",
+  "nickname": "tuniconico"
+}
+
+###
+
+### editar usuario
+PATcH http://localhost:8080/users/8f24f5ca-c1e7-4ace-856d-d17de1e9da34
+Content-Type: application/json
+
+{
+  "name": "nico modificado"
+}
+###
+
+### consultar usuario
+GET http://localhost:8080/users/8f24f5ca-c1e7-4ace-856d-d17de1e9da34
+Content-Type: application/json
+
+###
+
+### Eliminar usuario
+DELETE http://localhost:8080/users/8f24f5ca-c1e7-4ace-856d-d17de1e9da34
+Content-Type: application/json

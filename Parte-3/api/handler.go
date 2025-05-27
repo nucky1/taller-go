@@ -4,18 +4,13 @@ import (
 	"errors"
 	"net/http"
 	"parte3/internal/user"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
+
 	"github.com/gin-gonic/gin"
 )
 
 // handler holds the user service and implements HTTP handlers for user CRUD.
 type handler struct {
 	userService *user.Service
-}
-
-var onlyLetters validator.Func = func(f1 validator.FieldLevel) bool {
-	str,ok := f1.Field().
 }
 
 // handleCreate handles POST /users
